@@ -94,8 +94,17 @@ async function acquireOpamLinux(version: string, customRepository: string) {
     await exec(path.join(__dirname, "install-ocaml-unix.sh"), [version]);
     await exec(`"${toolPath}/opam"`, ["install", "-y", "depext"]);
 
-    await cache.saveCache(cachedPath, key)
+    try {
+      await cache.saveCache(cachedPath, key)
+    } catch (err ) {
+      if (err instanceof cache.ReserveCacheError) {
+        core.info(`Cache entry ${key} has already been created by another worfklow`);
+      } else {
+        throw err
+      }
+    }
   } else {
+    core.info(`Restoring cache from key ${key}`)
     await exec(`"${toolPath}/opam"`, ["update", "-y"])
     await exec(`"${toolPath}/opam"`, ["upgrade", "-y"])
   }
