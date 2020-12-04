@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { exec } from "@actions/exec";
 import * as tc from "@actions/tool-cache";
+import * as cache from "@actions/cache";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -8,6 +9,11 @@ import * as util from "util";
 
 const osPlat = os.platform();
 const osArch = os.arch();
+const osRelease = os.release();
+
+function getCacheKey(version: string, repository: string) {
+  return `${osPlat}-${osArch}-${osRelease}-${version}-${repository}`
+}
 
 function getOpamFileName(version: string) {
   const platform = osPlat === "darwin" ? "macos" : osPlat;
@@ -77,9 +83,22 @@ async function acquireOpamLinux(version: string, customRepository: string) {
   await exec(
     "sudo apt-get -y install bubblewrap ocaml-native-compilers ocaml-compiler-libs musl-tools"
   );
-  await exec(`"${toolPath}/opam"`, ["init", "-yav", repository]);
-  await exec(path.join(__dirname, "install-ocaml-unix.sh"), [version]);
-  await exec(`"${toolPath}/opam"`, ["install", "-y", "depext"]);
+
+  const path = ["~/.opam"];
+  const key = getCacheKey(version, repository);
+
+  const cacheKey = await cache.restoreCache(path, key);
+  
+  if (cacheKey === undefined) {
+    await exec(`"${toolPath}/opam"`, ["init", "-yav", repository]);
+    await exec(path.join(__dirname, "install-ocaml-unix.sh"), [version]);
+    await exec(`"${toolPath}/opam"`, ["install", "-y", "depext"]);
+
+    await cache.saveCache(path, key)
+  } else {
+    await exec(`"${toolPath}/opam"`, ["update", "-y"])
+    await exec(`"${toolPath}/opam"`, ["upgrade", "-y"])
+  }
 }
 
 async function acquireOpamDarwin(version: string, customRepository: string) {
