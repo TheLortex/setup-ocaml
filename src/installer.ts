@@ -11,8 +11,8 @@ const osPlat = os.platform();
 const osArch = os.arch();
 const osRelease = os.release();
 
-function getCacheKey(version: string, repository: string) {
-  return `${osPlat}-${osArch}-${osRelease}-${version}-${repository}`
+function getCacheKey(version: string) {
+  return `${osPlat}-${osArch}-${osRelease}-${version}`
 }
 
 function getOpamFileName(version: string) {
@@ -85,11 +85,11 @@ async function acquireOpamLinux(version: string, customRepository: string) {
   );
 
   const cachedPath = ["~/.opam"];
-  const key = getCacheKey(version, repository);
+  const cKey = getCacheKey(version);
 
-  const cacheKey = await cache.restoreCache(cachedPath, key);
+  const cacheKey = await cache.restoreCache(cachedPath, cKey);
 
-  core.warning(`Cache miss: for entry ${key} (${cacheKey}).`);
+  core.warning(`Cache miss: for entry ${cKey} (${cacheKey}).`);
 
   if (cacheKey === undefined) {
     await exec(`"${toolPath}/opam"`, ["init", "-yav", repository]);
@@ -97,10 +97,10 @@ async function acquireOpamLinux(version: string, customRepository: string) {
     await exec(`"${toolPath}/opam"`, ["install", "-y", "depext"]);
 
     try {
-      await cache.saveCache(cachedPath, key)
+      await cache.saveCache(cachedPath, cKey)
     } catch (err ) {
       if (err instanceof cache.ReserveCacheError) {
-        core.info(`Cache entry ${key} has already been created by another worfklow`);
+        core.info(`Cache entry ${cKey} has already been created by another worfklow`);
       } else {
         throw err
       }
