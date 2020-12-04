@@ -84,17 +84,17 @@ async function acquireOpamLinux(version: string, customRepository: string) {
     "sudo apt-get -y install bubblewrap ocaml-native-compilers ocaml-compiler-libs musl-tools"
   );
 
-  const path = ["~/.opam"];
+  const cachedPath = ["~/.opam"];
   const key = getCacheKey(version, repository);
 
-  const cacheKey = await cache.restoreCache(path, key);
+  const cacheKey = await cache.restoreCache(cachedPath, key);
   
   if (cacheKey === undefined) {
     await exec(`"${toolPath}/opam"`, ["init", "-yav", repository]);
     await exec(path.join(__dirname, "install-ocaml-unix.sh"), [version]);
     await exec(`"${toolPath}/opam"`, ["install", "-y", "depext"]);
 
-    await cache.saveCache(path, key)
+    await cache.saveCache(cachedPath, key)
   } else {
     await exec(`"${toolPath}/opam"`, ["update", "-y"])
     await exec(`"${toolPath}/opam"`, ["upgrade", "-y"])
