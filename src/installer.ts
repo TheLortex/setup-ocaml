@@ -106,7 +106,7 @@ async function acquireOpamLinux(version: string, customRepository: string) {
       }
     }
   } else {
-    core.info(`Restoring cache from key ${key}`)
+    core.info(`Restoring cache from key ${cKey}`)
     await exec(`"${toolPath}/opam"`, ["update", "-y"])
     await exec(`"${toolPath}/opam"`, ["upgrade", "-y"])
   }
