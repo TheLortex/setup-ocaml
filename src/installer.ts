@@ -88,7 +88,9 @@ async function acquireOpamLinux(version: string, customRepository: string) {
   const key = getCacheKey(version, repository);
 
   const cacheKey = await cache.restoreCache(cachedPath, key);
-  
+
+  core.warning(`Cache miss: for entry ${key} (${cacheKey}).`);
+
   if (cacheKey === undefined) {
     await exec(`"${toolPath}/opam"`, ["init", "-yav", repository]);
     await exec(path.join(__dirname, "install-ocaml-unix.sh"), [version]);
